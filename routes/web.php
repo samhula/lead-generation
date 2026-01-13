@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PipelineController;
 
 /*
@@ -81,8 +82,20 @@ Route::get('/manage/users', function() {
     return view('manage.users.index', compact('users'));
 })->name('manage.users.index');
 
+Route::get('/integrations/slack', function() {
+    return view('integrations.slack');
+})->name('slack.settings');
+
+Route::get('/integrations/whatsapp', function() {
+    return view('integrations.whatsapp');
+})->name('whatsapp.settings');
+
+Route::get('/integrations/discord', function() {
+    return view('integrations.discord');
+})->name('discord.settings');
+
 Route::get('/settings', function() {
     return view('settings.index');
 })->name('settings.index');
 
-Route::get('/', [DashboardController::class, 'index'])->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
