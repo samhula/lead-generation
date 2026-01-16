@@ -1,4 +1,5 @@
 import './bootstrap';
+import './custom-chart.js'; // Add this
 
 document.addEventListener('DOMContentLoaded', () => {
     const toggle = document.getElementById('dark-toggle');

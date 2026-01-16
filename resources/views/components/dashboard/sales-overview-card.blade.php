@@ -1,11 +1,20 @@
-<!-- SALES OVERVIEW START -->
-<div class="col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-    <h2 class="font-bold text-lg mb-4">Sales Overview</h2>
-    <div class="h-64 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500">
-        <canvas id="salesOverviewChart" width="800" height="260"></canvas>
+@props(['chartData'])
+
+<div class="h-full bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="font-bold text-lg text-gray-900">Sales Overview</h2>
+            <p class="text-sm text-gray-500">Revenue performance over time</p>
+        </div>
+        <select class="appearance-none bg-gray-50 border border-gray-200 text-sm rounded-lg p-2 pr-8 cursor-pointer">
+            <option>This Year</option>
+        </select>
+    </div>
+    
+    <div class="relative flex-1 w-full min-h-[300px]">
+        <canvas 
+            id="salesOverviewChart" 
+            data-chart='@json($chartData)'
+        ></canvas>
     </div>
 </div>
-
-@vite(['resources/js/custom-chart.js'])
-
-<!-- SALES OVERVIEW END -->

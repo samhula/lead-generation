@@ -1,30 +1,32 @@
 @props([
     'label',
-    'icon' => null,
-    'iconImage' => null,
     'href' => '#',
-    'active' => false
+    'active' => false,
+    'icon' => null,       // For Emojis
+    'icon_image' => null,  // For Images (Slack/WhatsApp)
+    'badge' => null       // For numbers
 ])
 
-<!-- SIDEBAR NAV ITEM START -->
 <a href="{{ $href }}"
-   class="flex items-center gap-3 px-4 py-2 rounded-xl transition-all
+   class="group flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
        {{ $active
-           ? 'bg-blue-500/10 text-blue-600 font-semibold'
-           : 'font-semibold text-gray-800 hover:bg-gray-200'
+           ? 'bg-blue-50 text-blue-700'
+           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
        }}"
 >
-    @if ($iconImage)
-        <img
-            src="{{ $iconImage }}"
-            alt=""
-            class="w-6.5 h-6.5 object-contain"
-        />
-    @elseif ($icon)
-        <span class="text-lg">{{ $icon }}</span>
-    @endif
+    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center text-lg leading-none">
+        @if ($icon_image)
+            <img src="{{ $icon_image }}" alt="" class="w-5 h-5 object-contain">
+        @elseif ($icon)
+            {{ $icon }}
+        @endif
+    </div>
 
-    <span>{{ $label }}</span>
+    <span class="flex-1 text-sm font-medium pt-0.5">{{ $label }}</span>
+
+    @if($badge)
+        <span class="bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs font-semibold group-hover:bg-white border border-transparent group-hover:border-gray-200">
+            {{ $badge }}
+        </span>
+    @endif
 </a>
-<!-- SIDEBAR NAV ITEM END -->
- 

@@ -1,59 +1,65 @@
-@props(['users'])
-
 <x-layout.app title="Manage Users">
 
-    <!-- Main Content -->
-    <div class="flex-1 space-y-8 overflow-y-auto">
+    <x-ui.table.headers 
+        title="Team Members" 
+        description="Manage access and roles for your organization."
+        button-text="Invite Member"
+        button-icon="plus"
+    />
 
-        <!-- Page Title + Button -->
-        <div class="flex justify-between items-center">
-            <h1 class="text-2xl font-bold">Manage Users</h1>
-            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg shadow">
-                + Create User
-            </button>
-        </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <x-ui.stat-card label="Total Seats" value="12" sub-value="/20" icon="users" color="blue" />
+        <x-ui.stat-card label="Active Now" value="4" icon="status-online" color="green" />
+        <x-ui.stat-card label="Pending Invites" value="1" icon="mail" color="yellow" />
+    </div>
 
-        <!-- User Table Card -->
-        <div class="bg-white rounded-xl shadow p-6">
-            <h2 class="font-semibold text-lg mb-4">User Directory</h2>
+    <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        
+        <x-ui.table.toolbar />
 
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="text-gray-500 text-sm border-b border-gray-200">
-                        <th class="p-3">User</th>
-                        <th class="p-3">Email</th>
-                        <th class="p-3">Role</th>
-                        <th class="p-3 text-right">Actions</th>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <x-ui.table.th>User</x-ui.table.th>
+                        <x-ui.table.th>Role</x-ui.table.th>
+                        <x-ui.table.th>Status</x-ui.table.th>
+                        <x-ui.table.th>Last Active</x-ui.table.th>
+                        <x-ui.table.th class="relative"><span class="sr-only">Actions</span></x-ui.table.th>
                     </tr>
                 </thead>
-
-                <tbody class="text-sm">
-
-                @foreach ($users as $user)
-                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
-                        <td class="p-3 font-medium">{{ $user->name }}</td>
-                        <td class="p-3">{{ $user->email }}</td>
-                        <td class="p-3 capitalize">
-                            <span class="px-2 py-1 rounded text-xs font-semibold
-                                @if($user->role === 'admin')
-                                    bg-red-100 text-red-700
-                                @elseif($user->role === 'manager')
-                                    bg-yellow-100 text-yellow-700
-                                @else
-                                    bg-green-100 text-green-700
-                                @endif">
-                                {{ $user->role }}
-                            </span>
-                        </td>
-                        <td class="p-3 text-right">
-                            <button class="text-blue-600 hover:underline mr-3">Edit</button>
-                            <button class="text-red-600 hover:underline">Delete</button>
-                        </td>
-                    </tr>
-                @endforeach
-
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach ($users as $user)
+                        <x-ui.table.row :user="$user" />
+                    @endforeach
                 </tbody>
             </table>
+        </div>
+        
+        <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6">
+            <div class="flex items-center justify-between">
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing <span class="font-medium">1</span> to <span class="font-medium">3</span> of <span class="font-medium">12</span> results
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                            <a href="#" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                <span class="sr-only">Previous</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" /></svg>
+                            </a>
+                            <a href="#" aria-current="page" class="relative z-10 inline-flex items-center bg-gray-900 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">1</a>
+                            <a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">2</a>
+                            <a href="#" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                <span class="sr-only">Next</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>

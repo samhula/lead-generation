@@ -5,32 +5,38 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
-.lead-card.dragging {
+/* Hide scrollbar but keep functionality */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+/* 1. THE GHOST FIX: 
+    This class is applied to the element you are dragging.
+    Opacity 0.5 makes it look "lifted".
+    pointer-events: none is CRITICAL. It stops the mouse from "seeing" the card 
+    you are holding, preventing the flickering border bug.
+*/
+.dragging {
     opacity: 0.5;
-    /* subtle visual cue */
-    transform-origin: center;
+    background-color: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    pointer-events: none !important; /* This is crucial */
 }
 
-     /* the blue horizontal drop indicator */
+/* 2. THE DROP INDICATOR: 
+    The blue line that appears between cards.
+*/
 .drop-indicator {
-    height: 6px;
-    background: #3b82f6; /* Tailwind blue-500 */
-    border-radius: 3px;
-    transition: opacity .12s;
+    height: 2px;
+    background-color: #3b82f6; /* Blue-500 */
+    margin: 4px 0;
+    border-radius: 2px;
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.5);
+    pointer-events: none;
 }
 
-    /* ensure columns are layout-friendly */
-.kanban-col {
-    position: relative; 
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-.no-scrollbar::-webkit-scrollbar {
-    display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.no-scrollbar{
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+/* Highlight the column background when dragging over it */
+.drag-over-column {
+    background-color: #eff6ff !important; /* Blue-50 */
+    border-color: #bfdbfe !important; /* Blue-200 */
 }

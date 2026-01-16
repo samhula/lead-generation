@@ -1,153 +1,173 @@
-document.addEventListener('DOMContentLoaded', () => {
-const pipeline = document.getElementById('pipeline');
-if (!pipeline) return;
+// Define variables globally
+let draggedItem = null;
+let currentIndicator = null;
+let originalColumn = null;
 
-// helpers
-const getColumns = () => Array.from(document.querySelectorAll('.kanban-col'));
-let centers = [];      // [{el, centerX}]
-let boundaries = [];   // x positions between columns
-let indicator = null;  // the blue line DOM node
-let dragging = null;   // { card, originalParent, originalNextSibling }
+// Attach functions to 'window' so HTML attributes can see them
+window.handleDragStart = function(ev) {
+    draggedItem = ev.target;
+    originalColumn = ev.target.closest('[data-stage]');
+    
+    ev.dataTransfer.effectAllowed = "move";
+    ev.dataTransfer.setData("text/plain", ev.target.id);
 
-function computeColumnCenters() {
-    const cols = getColumns();
-    centers = cols.map(col => {
-    const r = col.getBoundingClientRect();
-    return { el: col, centerX: r.left + r.width / 2 };
+    requestAnimationFrame(() => {
+        draggedItem.classList.add('dragging');
     });
-    boundaries = [];
-    for (let i = 0; i < centers.length - 1; i++) {
-    boundaries.push((centers[i].centerX + centers[i + 1].centerX) / 2);
-    }
 }
 
-function getColumnIndexForX(x) {
-    if (!centers.length) return -1;
-    if (centers.length === 1) return 0;
-    for (let i = 0; i < boundaries.length; i++) {
-    if (x < boundaries[i]) return i;
-    }
-    return centers.length - 1;
+window.handleDragEnd = function(ev) {
+    ev.target.classList.remove('dragging');
+    removeIndicator();
+    
+    document.querySelectorAll('.drag-over-column').forEach(el => {
+        el.classList.remove('drag-over-column');
+    });
+    
+    draggedItem = null;
+    originalColumn = null;
 }
 
-function createIndicator() {
-    if (!indicator) {
-    indicator = document.createElement('div');
-    indicator.className = 'drop-indicator';
-    }
-    return indicator;
-}
+window.handleDragOver = function(ev) {
+    ev.preventDefault();
+    const column = ev.currentTarget;
+    
+    document.querySelectorAll('.drag-over-column').forEach(el => el.classList.remove('drag-over-column'));
+    column.classList.add('drag-over-column');
 
-// Find where in the column to insert (before which child)
-function findInsertBefore(targetCol, clientY, draggedCard) {
-    const cards = Array.from(
-        targetCol.querySelectorAll('.lead-card')
-    ).filter(c => c !== draggedCard);
-
-    for (const card of cards) {
-        const r = card.getBoundingClientRect();
-        const midY = r.top + r.height / 2;
-        if (clientY < midY) return card;
+    if (!currentIndicator) {
+        currentIndicator = document.createElement('div');
+        currentIndicator.className = 'drop-indicator';
     }
 
-    return null;
-}
+    const afterElement = getDragAfterElement(column, ev.clientY);
 
-function onPointerMove(e) {
-if (!dragging) return;
-const x = e.clientX;
-const y = e.clientY;
-
-const colIndex = getColumnIndexForX(x);
-if (colIndex < 0 || !centers[colIndex]) {
-    if (indicator && indicator.parentNode) indicator.remove();
-    return;
-}
-
-const column = centers[colIndex].el;
-const targetCol = column.querySelector('.cards-container');
-if (!targetCol) return;
-
-// 🛑 Prevent showing indicator in the original column
-// if dragged card is the only child (or if drop would be in same place).
-if (targetCol === dragging.originalParent.closest('.cards-container')) {
-    const cards = Array.from(targetCol.querySelectorAll('.lead-card')).filter(c => c !== dragging.card);
-    if (cards.length === 0) {
-        if (indicator && indicator.parentNode) indicator.remove();
-        return; // no need for indicator
-    }
-}
-
-const insertBefore = findInsertBefore(targetCol, y, dragging.card);
-const ind = createIndicator();
-
-if (insertBefore) {
-    if (ind.parentNode !== targetCol || ind.nextSibling !== insertBefore) {
-    targetCol.insertBefore(ind, insertBefore);
-    }
-} else {
-    if (ind.parentNode !== targetCol || ind.nextSibling !== null) {
-    targetCol.appendChild(ind);
-    }
-}
-}
-
-function onPointerUp(e) {
-    if (!dragging) return;
-
-    // If indicator is in a column, move the card to be before the indicator
-    if (indicator && indicator.parentNode) {
-    indicator.parentNode.insertBefore(dragging.card, indicator);
-    // cleanup the indicator
-    indicator.remove();
+    if (afterElement == null) {
+        const emptyState = column.querySelector('.empty-placeholder');
+        if (emptyState) {
+            column.insertBefore(currentIndicator, emptyState);
+        } else {
+            column.appendChild(currentIndicator);
+        }
     } else {
-    // No valid drop: restore original position
-    if (dragging.originalNextSibling) {
-        dragging.originalParent.insertBefore(dragging.card, dragging.originalNextSibling);
-    } else {
-        dragging.originalParent.appendChild(dragging.card);
+        column.insertBefore(currentIndicator, afterElement);
     }
-    }
-
-    // restore card state
-    dragging.card.classList.remove('dragging');
-    dragging.card.style.pointerEvents = ''; // re-enable pointer events
-    dragging = null;
-
-    // remove global listeners
-    window.removeEventListener('pointermove', onPointerMove);
-    window.removeEventListener('pointerup', onPointerUp);
 }
 
-// start drag (delegated)
-pipeline.addEventListener('pointerdown', (e) => {
-    const el = e.target.closest('.lead-card');
-    if (!el) return;
-    // only left button
-    if (e.button && e.button !== 0) return;
+window.handleDrop = function(ev) {
+    ev.preventDefault();
+    const column = ev.currentTarget;
+    column.classList.remove('drag-over-column');
 
-    e.preventDefault(); // prevent text selection for example
+    // Visual Move
+    if (currentIndicator && currentIndicator.parentNode === column) {
+        column.insertBefore(draggedItem, currentIndicator);
+    } else {
+        column.appendChild(draggedItem);
+    }
+    
+    // Handle Empty States
+    const emptyState = column.querySelector('.empty-placeholder');
+    if (emptyState) emptyState.style.display = 'none';
 
-    computeColumnCenters(); // compute columns & boundaries at drag start
+    if (originalColumn && originalColumn !== column) {
+            const originalCards = originalColumn.querySelectorAll('.lead-card');
+            if (originalCards.length === 0) {
+                const originEmpty = originalColumn.querySelector('.empty-placeholder');
+                if (originEmpty) originEmpty.style.display = 'flex';
+            }
+    }
 
-    // store original place in case we need to revert
-    dragging = {
-    card: el,
-    originalParent: el.parentNode,
-    originalNextSibling: el.nextSibling
+    removeIndicator();
+
+    // Log Data
+    const newStage = column.getAttribute('data-stage');
+    const leadId = draggedItem.id.replace('lead-', '');
+    console.log(`MOVED Lead ${leadId} to ${newStage}`);
+}
+
+// Helper (internal function, doesn't need to be global)
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.lead-card:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function removeIndicator() {
+    if (currentIndicator && currentIndicator.parentNode) {
+        currentIndicator.parentNode.removeChild(currentIndicator);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    
+    const observerOptions = {
+        root: null, // use the viewport (or you can set it to the column div)
+        rootMargin: '100px', // Load data 100px BEFORE the user hits the bottom
+        threshold: 0.1
     };
 
-    // visual state: make the original semi-transparent and allow pointer events to pass through
-    el.classList.add('dragging');
-    el.style.pointerEvents = 'none'; // so elementFromPoint (if used) hits what's underneath
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                loadMoreLeads(entry.target);
+            }
+        });
+    }, observerOptions);
 
-    // attach global listeners
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-});
+    // Start watching all sentinels
+    document.querySelectorAll('.loading-sentinel').forEach(el => observer.observe(el));
 
-// recompute centers if layout changes
-window.addEventListener('resize', computeColumnCenters);
-// sometimes content changes dynamically → recompute before next drag attempt
-// you can call computeColumnCenters() manually if you change columns/cards programmatically
+    async function loadMoreLeads(sentinel) {
+        const column = sentinel.closest('[data-stage]');
+        const stage = column.getAttribute('data-stage');
+        const cursor = column.getAttribute('data-next-cursor');
+
+        if (!cursor || cursor === 'null') {
+            sentinel.remove(); // No more data
+            return;
+        }
+
+        // Prevent double-firing
+        if (sentinel.classList.contains('loading')) return;
+        sentinel.classList.add('loading');
+
+        try {
+            // Fetch the HTML chunk
+            const response = await fetch(`/pipeline/load-more?stage=${stage}&cursor=${cursor}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            // 1. Insert the new HTML *before* the sentinel
+            sentinel.insertAdjacentHTML('beforebegin', data.html);
+
+            // 2. Update the cursor for the NEXT load
+            if (data.next_cursor) {
+                column.setAttribute('data-next-cursor', data.next_cursor);
+                sentinel.classList.remove('loading');
+            } else {
+                // If no more pages, remove the sentinel
+                column.setAttribute('data-next-cursor', null);
+                sentinel.remove();
+            }
+
+            // 3. Re-attach drag listeners to new elements (IMPORTANT)
+            // Since we used window.handleDragStart in the previous step, 
+            // the ondragstart attributes in the HTML will work automatically!
+            
+        } catch (error) {
+            console.error('Error loading leads:', error);
+            sentinel.classList.remove('loading');
+        }
+    }
 });
